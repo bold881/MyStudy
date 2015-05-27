@@ -8,5 +8,10 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
+	<classpathentry kind="lib" path="D:/programs/m2_repo/commons-lang/commons-lang/2.6/commons-lang-2.6.jar"/>
+	<classpathentry kind="lib" path="D:/programs/m2_repo/junit/junit/4.11/junit-4.11.jar"/>
+	<classpathentry kind="lib" path="D:/programs/m2_repo/org/jsoup/jsoup/1.7.3/jsoup-1.7.3.jar"/>
+	<classpathentry kind="lib" path="D:/programs/m2_repo/org/apache/httpcomponents/httpclient/4.1.2/httpclient-4.1.2.jar"/>
+	<classpathentry kind="lib" path="D:/programs/m2_repo/org/apache/httpcomponents/httpcore/4.1.2/httpcore-4.1.2.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
