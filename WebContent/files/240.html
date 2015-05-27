@@ -1,0 +1,1046 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=GB2312">
+<title>Java实现简单的网络爬虫 - 泡在网上的日子</title>
+<meta name="keywords" content="Java,实现,简单,网络,爬虫,一直,以来,希望,自己做," />
+<meta name="description" content="一直以来都希望自己做一个站内的搜索引擎，其实不一定是一个搜索引擎，关键是能分析网站数据的东西，java有很多开源的爬虫实现，但是开始还是从一个简单的里面了解其原理吧。 总共有6个类，先介绍下每个类的功能： DownloadPage.java的功能是下载此超链接的" />
+<link href="/templets/jcodecraeer/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/templets/jcodecraeer/css/new.css" rel="stylesheet" type="text/css">
+<script language="javascript" type="text/javascript" src="/templets/jcodecraeer/js/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="/templets/jcodecraeer/js/syntaxhighlighter/scripts/shCore.js"></script>
+<script type="text/javascript" src="/templets/jcodecraeer/js/syntaxhighlighter/scripts/shBrushJScript.js"></script>
+<link href="/templets/jcodecraeer/js/syntaxhighlighter/styles/shThemeMDUltra.css" rel="stylesheet" type="text/css" />
+<link type="text/css" rel="stylesheet" href="/templets/jcodecraeer/js/syntaxhighlighter/styles/shCoreDefault.css"/>
+<script language="javascript" type="text/javascript" src="/include/myajax.js"></script>
+<script language="javascript" type="text/javascript">
+	function CheckLogin(){
+	    var taget_obj = document.getElementById('login_info');
+	    myajax = new MyAjax(taget_obj,false,false,'','','');
+	    myajax.SendGet2("/member/ajax_loginsta.php");
+	    DedeXHTTP = null;
+	}
+	function checkSubmit(){
+		if(document.feedback.msg.value!='') document.feedback.submit();
+		else alert("评论内容不能为空！");
+	}		
+
+	function postBadGood(ftype,fid)
+	{
+		var taget_obj = document.getElementById(ftype+fid);
+		var saveid = GetCookie('badgoodid');
+		if(saveid != null)
+		{
+			var saveids = saveid.split(',');
+			var hasid = false;
+			saveid = '';
+			j = 1;
+			for(i=saveids.length-1;i>=0;i--)
+			{
+				if(saveids[i]==fid && hasid) continue;
+				else {
+					if(saveids[i]==fid && !hasid) hasid = true;
+					saveid += (saveid=='' ? saveids[i] : ','+saveids[i]);
+					j++;
+					if(j==10 && hasid) break;
+					if(j==9 && !hasid) break;
+				}
+			}
+			if(hasid) { alert('您刚才已表决过了喔！'); return false;}
+			else saveid += ','+fid;
+			SetCookie('badgoodid',saveid,1);
+		}
+		else
+		{
+			SetCookie('badgoodid',fid,1);
+		}
+		myajax = new MyAjax(taget_obj,false,false,'','','');
+		myajax.SendGet2("/plus/feedback.php?aid="+fid+"&action="+ftype+"&fid="+fid);
+	}
+	function postStow(aid)
+	{
+		var taget_obj = document.getElementById('newdigg');
+ 
+		myajax = new MyAjax(taget_obj,false,false,'','','');
+		myajax.SendGet2("/plus/stow.php?aid="+aid);
+	}
+	function postDigg(ftype,aid)
+	{
+		var taget_obj = document.getElementById('newdigg');
+		var saveid = GetCookie('diggid');
+		if(saveid != null)
+		{
+			var saveids = saveid.split(',');
+			var hasid = false;
+			saveid = '';
+			j = 1;
+			for(i=saveids.length-1;i>=0;i--)
+			{
+				if(saveids[i]==aid && hasid) continue;
+				else {
+					if(saveids[i]==aid && !hasid) hasid = true;
+					saveid += (saveid=='' ? saveids[i] : ','+saveids[i]);
+					j++;
+					if(j==20 && hasid) break;
+					if(j==19 && !hasid) break;
+				}
+			}
+			if(hasid) { alert("您已经顶过该帖，请不要重复顶帖 ！"); return; }
+			else saveid += ','+aid;
+			SetCookie('diggid',saveid,1);
+		}
+		else
+		{
+			SetCookie('diggid',aid,1);
+		}
+		myajax = new MyAjax(taget_obj,false,false,'','','');
+		var url = "/plus/digg_ajax.php?action="+ftype+"&id="+aid;
+		myajax.SendGet2(url);
+	}
+	function getDigg(aid)
+	{
+		var taget_obj = document.getElementById('newdigg');
+		myajax = new MyAjax(taget_obj,false,false,'','','');
+		myajax.SendGet2("/plus/digg_ajax.php?id="+aid);
+		DedeXHTTP = null;
+	} 
+	jQuery(document).ready(function($) {
+	    SyntaxHighlighter.all(); 
+	
+	   //注意最后的@me必须要加两重引号，不然js语法会出错
+	   var htmlstr =  '';
+	   $(".arc_body").prepend(htmlstr); 
+	});
+			
+</script>
+
+</head>
+<body>
+
+<div  class="header" id="header">
+	<div class="container clearfix">
+		<a href="/" class="logo"><img width="181" src="/templets/jcodecraeer/images/logo.png"><em></em></a>
+		<ul class="header-nav">
+		  <li class="item"><a href="/" class="trigger">首页</a></li>
+		  <li class="item"><a href="/plus/list.php?tid=31" class="trigger">代码</a></li>
+	 
+		  <li class="item"><a href="/ask" class="trigger">问答</a></li>
+		  <li class="item"><a href="/tags.php" class="trigger">标签</a></li>
+          <li class="item"><a href="/about.html" class="trigger">关于</a></li>		  
+		</ul>
+        <div class="search-con">
+			<form class="search-form" action="/plus/search.php" method="get">
+			  <input type="hidden" name="kwtype" value="0" />
+			  <input class="search-input" value="" name="q" placeholder="search" type="text">
+			  <input class="search-btn" value="" id="searchbtn"  type="submit">
+			</form>
+		</div>
+
+		<div class="appdownload-btn">
+		  <a href="/appdown.html"> <span class="glyphicon glyphicon-cloud-download"></span> <span class="glyphicon-class">客户端</span></a>
+		</div>
+
+		<div class="user-status-bar" id="login_info">
+			<a href="/member/login.php" class="status-item  sign-status-item" id="signin-status-item">登录</a>
+			<a href="/member/reg_new.php" class="status-item sign-status-item" id="signup-status-item">注册</a>
+		</div>
+		<script language="javascript" type="text/javascript">CheckLogin();</script>
+	</div> 
+
+</div>
+
+  
+
+
+<div class="container main">
+	<div class="row">
+
+        <div id="" class="auto_left">
+            <div class="real_left">
+				<div class="arc_position">
+					<span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>  当前位置: <a href='http://www.jcodecraeer.com/'>主页</a> > <a href='/plus/list.php?tid=6'>程序设计</a> > <a href='/plus/list.php?tid=7'>java</a> > 
+				</div>				
+                <div class="articlecon clearfix">
+					<h1 class="title">Java实现简单的网络爬虫</h1>
+					<div class="subinfo clearfix">              
+							 泡在网上的日子  发表于 2012-06-10 22:04   
+							<span>第</span> 
+						<script src="/plus/count.php?view=yes&aid=240&mid=1" type='text/javascript' language="javascript"></script> 
+						<span>次阅读</span>
+						<span class="tags" id="arc_tags">                            
+							
+						 </span>
+						<script src="/action/is_admin.php?aid=240"  type='text/javascript' language="javascript"> </script>
+					</div>
+					<!-- JiaThis Button BEGIN -->
+					<div class="jiathis_style" style=" height:30px; width:180px; margin:auto;text-align:center;">
+						<a class="jiathis_button_qzone"></a>
+						<a class="jiathis_button_tsina"></a>
+						<a class="jiathis_button_tqq"></a>
+						<a class="jiathis_button_weixin"></a>
+						<a class="jiathis_button_renren"></a>
+						<a class="jiathis_button_xiaoyou"></a>
+						<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+						<a class="jiathis_counter_style"></a>
+					</div>
+					<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1397764132570636" charset="utf-8"></script>
+					<!-- JiaThis Button END -->
+					<!-- 谷歌横幅广告 -->
+					<div   style="text-align:center;">						
+						<script src='/plus/ad_js.php?aid=23' language='javascript'></script>
+					</div>
+					<!-- 谷歌横幅广告结束 -->
+					<div id="main_richtext">                         
+						<div class="arc_body"> 
+						 <p>&nbsp;&nbsp;&nbsp;&nbsp;一直以来都希望自己做一个站内的搜索引擎，其实不一定是一个搜索引擎，关键是能分析网站数据的东西，java有很多开源的爬虫实现，但是开始还是从一个简单的里面了解其原理吧。</p><p>&nbsp;&nbsp;&nbsp;&nbsp;总共有6个类，先介绍下每个类的功能：</p><p>&nbsp;&nbsp;&nbsp;&nbsp;DownloadPage.java的功能是下载此超链接的页面源代码.</p><p>&nbsp;&nbsp;&nbsp;&nbsp;FunctionUtils.java 的功能是提供不同的静态方法，包括：页面链接正则表达式匹配,获取URL链接的元素,判断是否创建文件,获取页面的Url并将其转换为规范的Url,截取网页网页源文件的目标内容。</p><p>&nbsp;&nbsp;&nbsp;&nbsp;HrefOfPage.java 的功能是获取页面源代码的超链接。</p><p>&nbsp;&nbsp;&nbsp;&nbsp;UrlDataHanding.java 的功能是整合各个给类，实现url到获取数据到数据处理类。</p><p>&nbsp;&nbsp;&nbsp;&nbsp;UrlQueue.java 的未访问Url队列。</p><p>&nbsp;&nbsp;&nbsp;&nbsp;VisitedUrlQueue.java 已访问过的URL队列。</p><p>&nbsp;</p><p>&nbsp;&nbsp;&nbsp;&nbsp;1.DownloadPage.java 此类要用到HttpClient组件。</p><p></p><pre class="brush:js;toolbar:false;">package com.sreach.spider;  
+    
+import java.io.IOException;  
+import org.apache.http.HttpEntity;  
+import org.apache.http.HttpResponse;  
+import org.apache.http.client.ClientProtocolException;  
+import org.apache.http.client.HttpClient;  
+import org.apache.http.client.methods.HttpGet;  
+import org.apache.http.impl.client.DefaultHttpClient;  
+import org.apache.http.util.EntityUtils;  
+    
+public class DownloadPage  
+{  
+    
+     /**  
+      * 根据URL抓取网页内容  
+      *   
+      * @param url  
+      * @return  
+      */
+     public static String getContentFormUrl(String url)  
+     {  
+         /* 实例化一个HttpClient客户端 */
+         HttpClient client = new DefaultHttpClient();  
+         HttpGet getHttp = new HttpGet(url);  
+    
+         String content = null;  
+    
+         HttpResponse response;  
+         try
+         {  
+             /*获得信息载体*/
+             response = client.execute(getHttp);  
+             HttpEntity entity = response.getEntity();  
+    
+             VisitedUrlQueue.addElem(url);  
+    
+             if (entity != null)  
+             {  
+                 /* 转化为文本信息 */
+                 content = EntityUtils.toString(entity);  
+    
+                 /* 判断是否符合下载网页源代码到本地的条件 */
+                 if (FunctionUtils.isCreateFile(url)  
+                         &amp;&amp; FunctionUtils.isHasGoalContent(content) != -1)  
+                 {  
+                     FunctionUtils.createFile(FunctionUtils  
+                             .getGoalContent(content), url);  
+                 }  
+             }  
+    
+         } catch (ClientProtocolException e)  
+         {  
+             e.printStackTrace();  
+         } catch (IOException e)  
+         {  
+             e.printStackTrace();  
+         } finally  
+         {  
+             client.getConnectionManager().shutdown();  
+         }  
+             
+         return content;  
+     }  
+    
+}</pre><p style="text-align:left; line-height:24px"><span style="color:dimgray">&nbsp;&nbsp;&nbsp;</span><strong><span style="color:dimgray">&nbsp;</span></strong><span style="color:dimgray">2.FunctionUtils.java&nbsp;</span><span style="color:dimgray">此类的方法均为</span><span style="color:dimgray">static</span><span style="color:dimgray">方法</span></p><pre class="brush:js;toolbar:false;">package com.sreach.spider;  
+    
+import java.io.BufferedWriter;  
+import java.io.File;  
+import java.io.FileOutputStream;  
+import java.io.IOException;  
+import java.io.OutputStreamWriter;  
+import java.util.regex.Matcher;  
+import java.util.regex.Pattern;  
+    
+public class FunctionUtils  
+{  
+    
+    /**  
+     * 匹配超链接的正则表达式  
+     */
+    private static String pat = "http://www\\.oschina\\.net/code/explore/.*/\\w+\\.[a-zA-Z]+";  
+    private static Pattern pattern = Pattern.compile(pat);  
+    
+    private static BufferedWriter writer = null;  
+    
+    /**  
+     * 爬虫搜索深度  
+     */
+    public static int depth = 0;  
+    
+    /**  
+     * 以"/"来分割URL,获得超链接的元素  
+     *   
+     * @param url  
+     * @return  
+     */
+    public static String[] divUrl(String url)  
+    {  
+        return url.split("/");  
+    }  
+    
+    /**  
+     * 判断是否创建文件  
+     *   
+     * @param url  
+     * @return  
+     */
+    public static boolean isCreateFile(String url)  
+    {  
+        Matcher matcher = pattern.matcher(url);  
+    
+        return matcher.matches();  
+    }  
+    
+    /**  
+     * 创建对应文件  
+     *   
+     * @param content  
+     * @param urlPath  
+     */
+    public static void createFile(String content, String urlPath)  
+    {  
+        /* 分割url */
+        String[] elems = divUrl(urlPath);  
+        StringBuffer path = new StringBuffer();  
+    
+        File file = null;  
+        for (int i = 1; i &lt; elems.length; i++)  
+        {  
+            if (i != elems.length - 1)  
+            {  
+    
+                path.append(elems[i]);  
+                path.append(File.separator);  
+                file = new File("D:" + File.separator + path.toString());  
+    
+            }  
+    
+            if (i == elems.length - 1)  
+            {  
+                Pattern pattern = Pattern.compile("\\w+\\.[a-zA-Z]+");  
+                Matcher matcher = pattern.matcher(elems[i]);  
+                if ((matcher.matches()))  
+                {  
+                    if (!file.exists())  
+                    {  
+                        file.mkdirs();  
+                    }  
+                    String[] fileName = elems[i].split("\\.");  
+                    file = new File("D:" + File.separator + path.toString()  
+                            + File.separator + fileName[0] + ".txt");  
+                    try
+                    {  
+                        file.createNewFile();  
+                        writer = new BufferedWriter(new OutputStreamWriter(  
+                                new FileOutputStream(file)));  
+                        writer.write(content);  
+                        writer.flush();  
+                        writer.close();  
+                        System.out.println("创建文件成功");  
+                    } catch (IOException e)  
+                    {  
+                        e.printStackTrace();  
+                    }  
+    
+                }  
+            }  
+    
+        }  
+    }  
+    
+    /**  
+     * 获取页面的超链接并将其转换为正式的A标签  
+     *   
+     * @param href  
+     * @return  
+     */
+    public static String getHrefOfInOut(String href)  
+    {  
+        /* 内外部链接最终转化为完整的链接格式 */
+        String resultHref = null;  
+    
+        /* 判断是否为外部链接 */
+        if (href.startsWith("http://"))  
+        {  
+            resultHref = href;  
+        } else
+        {  
+            /* 如果是内部链接,则补充完整的链接地址,其他的格式忽略不处理,如：a href="#" */
+            if (href.startsWith("/"))  
+            {  
+                resultHref = "http://www.oschina.net" + href;  
+            }  
+        }  
+    
+        return resultHref;  
+    }  
+    
+    /**  
+     * 截取网页网页源文件的目标内容  
+     *   
+     * @param content  
+     * @return  
+     */
+    public static String getGoalContent(String content)  
+    {  
+        int sign = content.indexOf("&lt;pre class=\"");  
+        String signContent = content.substring(sign);  
+    
+        int start = signContent.indexOf("&gt;");  
+        int end = signContent.indexOf("&lt;/pre&gt;");  
+    
+        return signContent.substring(start + 1, end);  
+    }  
+    
+    /**  
+     * 检查网页源文件中是否有目标文件  
+     *   
+     * @param content  
+     * @return  
+     */
+    public static int isHasGoalContent(String content)  
+    {  
+        return content.indexOf("&lt;pre class=\"");  
+    }  
+    
+}</pre><p style="text-align:left; line-height:24px"></p><p>&nbsp;&nbsp;&nbsp;&nbsp;3.<span style="color:dimgray; font-size:14px">HrefOfPage.java&nbsp;</span><span style="color:dimgray; font-size:14px">此类为获取页面的超链接</span></p><pre class="brush:js;toolbar:false;">package com.sreach.spider;  
+    
+public class HrefOfPage  
+{  
+    /**  
+     * 获得页面源代码中超链接  
+     */
+    public static void getHrefOfContent(String content)  
+    {  
+        System.out.println("开始");  
+        String[] contents = content.split("&lt;a href=\"");  
+        for (int i = 1; i &lt; contents.length; i++)  
+        {  
+            int endHref = contents[i].indexOf("\"");  
+    
+            String aHref = FunctionUtils.getHrefOfInOut(contents[i].substring(  
+                    0, endHref));  
+    
+            if (aHref != null)  
+            {  
+                String href = FunctionUtils.getHrefOfInOut(aHref);  
+    
+                if (!UrlQueue.isContains(href)  
+                        &amp;&amp; href.indexOf("/code/explore") != -1  
+                        &amp;&amp; !VisitedUrlQueue.isContains(href))  
+                {  
+                    UrlQueue.addElem(href);  
+                }  
+            }  
+        }  
+    
+        System.out.println(UrlQueue.size() + "--抓取到的连接数");  
+        System.out.println(VisitedUrlQueue.size() + "--已处理的页面数");  
+    
+    }  
+    
+}</pre><p><span style="color:dimgray; font-size:14px">&nbsp;&nbsp;&nbsp;&nbsp;4.</span><span style="color:dimgray">UrlDataHanding.java&nbsp;</span><span style="color:dimgray">此类主要是从未访问队列中获取</span><span style="color:dimgray">url,</span><span style="color:dimgray">下载页面，分析</span><span style="color:dimgray">url</span><span style="color:dimgray">，保存已访问</span><span style="color:dimgray">url</span><span style="color:dimgray">等操作，实现</span><span style="color:dimgray">Runnable</span><span style="color:dimgray">接口</span></p><pre class="brush:js;toolbar:false;">package com.sreach.spider;  
+    
+public class UrlDataHanding implements Runnable  
+{  
+    /**  
+     * 下载对应页面并分析出页面对应的URL放在未访问队列中。  
+     * @param url  
+     */
+    public void dataHanding(String url)  
+    {  
+            HrefOfPage.getHrefOfContent(DownloadPage.getContentFormUrl(url));  
+    }  
+            
+    public void run()  
+    {  
+        while(!UrlQueue.isEmpty())  
+        {  
+           dataHanding(UrlQueue.outElem());  
+        }  
+    }  
+}</pre><p></p><p><span style="color:dimgray; font-size:14px">&nbsp;&nbsp;&nbsp;&nbsp;5.</span><span style="color:dimgray">UrlQueue.java&nbsp;</span><span style="color:dimgray">此类主要是用来存放未访问的</span><span style="color:dimgray">URL</span><span style="color:dimgray">队列</span></p><p></p><pre class="brush:js;toolbar:false;">package com.sreach.spider;  
+    
+import java.util.LinkedList;  
+    
+public class UrlQueue  
+{  
+    /**超链接队列*/
+    public static LinkedList&lt;String&gt; urlQueue = new LinkedList&lt;String&gt;();  
+        
+    /**队列中对应最多的超链接数量*/
+    public static final int MAX_SIZE = 10000;  
+        
+    public synchronized static void addElem(String url)  
+    {  
+        urlQueue.add(url);  
+    }  
+        
+    public synchronized static String outElem()  
+    {  
+        return urlQueue.removeFirst();  
+    }  
+        
+    public synchronized static boolean isEmpty()  
+    {  
+        return urlQueue.isEmpty();  
+    }  
+        
+    public  static int size()  
+    {  
+        return urlQueue.size();  
+    }  
+        
+    public  static boolean isContains(String url)  
+    {  
+        return urlQueue.contains(url);  
+    }  
+    
+}</pre><p><span style="color:dimgray; font-size:14px">&nbsp;&nbsp;&nbsp;&nbsp;6.</span><span style="color:dimgray">VisitedUrlQueue.java&nbsp;</span><span style="color:dimgray">主要是保存已访问过的</span><span style="color:dimgray">URL</span><span style="color:dimgray">，使用</span><span style="color:dimgray">HashSet</span><span style="color:dimgray">来保存，主要是考虑到每个访问过的</span><span style="color:dimgray">URL</span><span style="color:dimgray">是不同。</span><span style="color:dimgray">HashSet</span><span style="color:dimgray">刚好符合这个要求</span></p><pre class="brush:js;toolbar:false;">package com.sreach.spider;  
+    
+import java.util.HashSet;  
+    
+/**  
+* 已访问url队列  
+* @author HHZ  
+*  
+*/
+public class VisitedUrlQueue  
+{  
+    public static HashSet&lt;String&gt; visitedUrlQueue = new HashSet&lt;String&gt;();  
+    
+    public synchronized static void addElem(String url)  
+    {  
+        visitedUrlQueue.add(url);  
+    }  
+    
+    public synchronized static boolean isContains(String url)  
+    {  
+        return visitedUrlQueue.contains(url);  
+    }  
+    
+    public synchronized static int size()  
+    {  
+        return visitedUrlQueue.size();  
+    }  
+}</pre><p></p><p><span style="color:dimgray; font-size:14px">&nbsp;&nbsp;&nbsp;&nbsp;7.</span><span style="color:dimgray">Test.java&nbsp;</span><span style="color:dimgray">此类为测试类</span></p><pre class="brush:js;toolbar:false;">import java.sql.SQLException;  
+    
+import com.sreach.spider.UrlDataHanding;  
+import com.sreach.spider.UrlQueue;  
+    
+public class Test  
+{  
+  public static void main(String[] args) throws SQLException  
+  {  
+      String url = "http://www.oschina.net/code/explore/achartengine/client/AndroidManifest.xml";  
+      String url1 = "http://www.oschina.net/code/explore";  
+      String url2 = "http://www.oschina.net/code/explore/achartengine";  
+      String url3 = "http://www.oschina.net/code/explore/achartengine/client";  
+          
+          
+      UrlQueue.addElem(url);  
+      UrlQueue.addElem(url1);  
+      UrlQueue.addElem(url2);  
+      UrlQueue.addElem(url3);  
+          
+      UrlDataHanding[] url_Handings = new UrlDataHanding[10];  
+          
+          for(int i = 0 ; i &lt; 10 ; i++)  
+          {  
+              url_Handings[i] = new UrlDataHanding();  
+              new Thread(url_Handings[i]).start();  
+          }  
+    
+  }  
+}</pre><p></p><p></p>
+						</div>
+					</div> 
+					
+					<div class="pageActive" id="newdigg">
+						<a href="javascript:void(0)"   class="pageActive-item" onclick="javascript:postStow(240)"> <span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>收藏</a>	
+						<a href="javascript:void(0)"   class="pageActive-item" onclick="javascript:postDigg('good',240)"> <span class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></span>赞 (1) </a>
+						<a href="javascript:void(0)"   class="pageActive-item" onclick="javascript:postDigg('bad',240)"><span class="glyphicon glyphicon-thumbs-down" aria-hidden="true"></span>踩 (0)</a>
+						<script language="javascript" type="text/javascript">getDigg(240);</script>							
+					</div>				
+					<div class="related_arc">
+						<script src='/plus/ad_js.php?aid=24' language='javascript'></script>				
+					</div>							
+					<div class="related_arc">
+						<h3>相关文章</h3>
+						<div class="rearc_list clearfix">
+							<ul>                          
+							
+							</ul>
+				   
+						</div>  						
+					</div>						
+                </div>				
+                 
+                <div  style="width:680px;"></div> 
+
+                <div class="wrapper"> 
+                    <div class="pre_next">
+						<div class='div_button'>上一篇：<a href='/a/chengxusheji/java/2012/0607/231.html'>Java中Array与ArrayList的主要区别</a> <div>1）精辟阐述： 可以将 ArrayList 想象成一种“会自动扩增容量的Array”。 2）Array（[]）：最高效；但是其容量固定且无法动态改变； ArrayList ： 容量可动态增长；但牺牲效率； 3）建议： 基于效率和类型检验，应 尽可能使用Array ， 无法确定数组大小时才</div></div>
+						<div class='div_button'>下一篇：<a href='/a/chengxusheji/java/2012/0621/267.html'>Java中23种经典设计模式</a> <div>Java中23种设计模式 目录 1. 设计模式3 1.1 创建型模式4 1.1.1 工厂方法4 1.1.2 抽象工厂6 1.1.3 建造者模式10 1.1.4 单态模式13 1.1.5 原型模式15 1.2 结构型模式17 1.2.1 适配器模式17 1.2.2 桥接模式19 1.2.3 组合模式23 1.2.4 装饰模式26 1.2.5 外观模式</div></div>
+                    </div>
+                </div>
+                <div class="dede_comment_post">
+    				
+<div class="comments_body">
+	<form action="#" method="post" name="feedback" onsubmit="return false;">
+		<input type="hidden" name="dopost" value="send" />
+		<input type="hidden" name="comtype" value="comments">
+		<input type="hidden" name="arcauthor" value="1 ">
+		<input type="hidden" name="aid" value="240" />
+		<input type="hidden" name="fid" id='feedbackfid' value="0" />
+		<div class="post_box clearfix">
+            <div class="wrapper">
+                <textarea cols="60" name="msg" id="cm_content" rows="5" class="ipt-txt"></textarea>
+            </div>		
+            <div class="post_act">
+            	<button type="button clearfix"  onClick='PostComment()'>发表评论</button>
+            </div>
+		</div>
+		
+		
+    </form>	
+</div>
+
+
+<!-- //评论表单区结束 -->
+<!-- //评论内容区 -->
+<a name='commettop'></a>
+
+<div id='commetcontentNew'>
+
+</div>
+<div id='commetcontent'>
+
+</div>
+<!--
+//由于评论载入时使用异步传输，因此必须在最后一步加载（DIGG和评论框须放在评论内容前面）
+//如果一定需要提前的把myajax.SendGet改为myajax.SendGet2，但可能会引起页面阻滞
+-->
+<script language='javascript'>
+function LoadCommets(page)
+{
+		var taget_obj = document.getElementById('commetcontent');
+		var waithtml = "<div style='line-height:50px'><img src='/images/loadinglit.gif' />评论加载中...</div>";
+		var myajax = new MyAjax(taget_obj, true, true, '', 'x', waithtml);
+		myajax.SendGet2("/plus/feedback_ajax.php?dopost=getlist&aid=240&page="+page);
+		DedeXHTTP = null;
+}
+function updatetag(){
+	var tags = $DE("tags").value;
+	var nfeedbacktype = 'feedback';
+	var taget_obj = $DE('tag_response');
+	var myajax = new MyAjax(taget_obj, false, true, '', '', "...");
+	myajax.sendlang = 'gb2312';
+	myajax.AddKeyN('dopost', 'send');
+	myajax.AddKeyN('id', '240');
+	myajax.AddKeyN('tags', tags);
+	myajax.SendPost2('/action/update_tags.php');	
+}
+function PostComment()
+{
+		var f = document.feedback;
+		var msg = $DE("cm_content").value;
+		var nface = '6';
+		var nfeedbacktype = 'feedback';
+		var nvalidate = '';
+		var nnotuser = '';
+		var nusername = '';
+		var npwd = '';
+		var taget_obj = $DE('commetcontentNew');
+		var waithtml = "<div style='line-height:30px'><img src='/images/loadinglit.gif' />正在发送中...</div>";
+		if(msg=='')
+		{
+			alert("评论内容不能为空！");
+			return;
+		}
+		if(f.validate)
+		{
+			if(f.validate.value=='') {
+				alert("请填写验证码！");
+				return;
+			}
+			else {
+				nvalidate = f.validate.value;
+			}
+		}
+		if(msg.length > 500)
+		{
+			alert("你的评论是不是太长了？请填写500字以内的评论。");
+			return;
+		}
+		if(f.feedbacktype) {
+			for(var i=0; i < f.feedbacktype.length; i++)
+				if(f.feedbacktype[i].checked) nfeedbacktype = f.feedbacktype[i].value;
+		}
+		/*
+		if(f.face) {
+			for(var j=0; j < f.face.length; j++)
+				if(f.face[j].checked) nface = f.face[j].value;
+		}
+		*/
+
+		
+		var myajax = new MyAjax(taget_obj, false, true, '', '', waithtml);
+		myajax.sendlang = 'gb2312';
+		myajax.AddKeyN('dopost', 'send');
+		myajax.AddKeyN('aid', '240');
+		myajax.AddKeyN('fid', f.fid.value);
+		myajax.AddKeyN('face', nface);
+		myajax.AddKeyN('feedbacktype', nfeedbacktype);
+		myajax.AddKeyN('validate', nvalidate);
+		myajax.AddKeyN('notuser', nnotuser);
+		myajax.AddKeyN('username', nusername);
+		myajax.AddKeyN('pwd', npwd);
+		myajax.AddKeyN('msg', msg);
+		myajax.AddKeyN('arcauthor', f.arcauthor.value);
+
+		myajax.SendPost2('/plus/feedback_ajax.php');
+		//msg = '';
+		CKEDITOR.instances.msg.setData('');
+		//taget_obj.removeAttribute('id');
+		f.fid.value = 0;
+		if(f.validate)
+		{
+			if($DE('validateimg')) $DE('validateimg').src = "/include/vdimgck.php?"+f.validate.value;
+			f.validate.value = '';
+		}
+		
+}
+function quoteCommet(fid)
+{
+	    document.feedback.fid.value = fid;
+}
+  
+function ajaxFeedback(aid, fid, type)
+{
+	var taget_obj = $DE('ajaxfeedback_'+fid);
+	if(taget_obj.innerHTML == '')
+	{
+		var myajax = new MyAjax(taget_obj, true, true, '', 'x');
+		myajax.SendGet2("/plus/feedback.php?aid="+aid+"&fid="+fid+"&action=quote&type=ajax");
+		eval('var result = typeof CKEDITOR.instances.msg_'+fid);
+		if(result != 'undefined')
+		{
+			// 删除实例
+			eval('var edit = CKEDITOR.instances.msg_'+fid);
+			CKEDITOR.remove(edit);
+		}
+		CKEDITOR.replace(document.getElementById('msg_'+fid) , CKEDITOR.instances.msg.config);
+		scroll(0, taget_obj.offsetTop - 120);
+		var formname = 'f = document.ajaxfeedback_'+fid;
+		eval(formname);
+		if(f.validate)
+		{
+			if($DE('vdimg_'+fid)) $DE('vdimg_'+fid).src = "/include/vdimgck.php?"+f.validate.value;
+			f.validate.value = '';
+		}
+		
+		DedeXHTTP = null;
+	}else{
+		taget_obj.innerHTML = '';
+	}
+}
+
+function postBadGood(ftype,fid)
+{
+	var taget_obj = document.getElementById(ftype+fid);
+	var saveid = GetCookie('badgoodid');
+	if(saveid != null)
+	{
+		var saveids = saveid.split(',');
+		var hasid = false;
+		saveid = '';
+		j = 1;
+		for(i=saveids.length-1;i>=0;i--)
+		{
+			if(saveids[i]==fid && hasid) continue;
+			else {
+				if(saveids[i]==fid && !hasid) hasid = true;
+				saveid += (saveid=='' ? saveids[i] : ','+saveids[i]);
+				j++;
+				if(j==10 && hasid) break;
+				if(j==9 && !hasid) break;
+			}
+		}
+		if(hasid) { alert('您刚才已表决过了喔！'); return false;}
+		else saveid += ','+fid;
+		SetCookie('badgoodid',saveid,1);
+	}
+	else
+	{
+		SetCookie('badgoodid',fid,1);
+	}
+	myajax = new MyAjax(taget_obj,false,false,'','','');
+	myajax.SendGet2("/plus/feedback.php?aid="+fid+"&action="+ftype+"&fid="+fid);
+}
+
+function ajaxQuotePost(fid)
+{
+	var formname = 'f = document.ajaxfeedback_'+fid;
+	eval(formname);
+	//var f = document.formname;
+	//var f = f[0];
+	var nvalidate = '';
+	var nnotuser = '';
+	var nusername = '';
+	var npwd = '';
+	var taget_obj = $DE('commetcontentNew');
+	var waithtml = "<div style='line-height:30px'><img src='/images/loadinglit.gif' />正在发送中...</div>";
+	eval('var msg = $DE("msg_'+fid+'").value');
+	if(f.validate)
+	{
+		if(f.validate.value=='') {
+			alert("请填写验证码！");
+			return;
+		}
+		else {
+			nvalidate = f.validate.value;
+		}
+	}
+	var myajax = new MyAjax(taget_obj, false, true, '', '', waithtml);
+	
+
+	
+	myajax.sendlang = 'gb2312';
+	myajax.AddKeyN('dopost', 'send');
+	myajax.AddKeyN('aid', '240');
+	myajax.AddKeyN('fid', f.fid.value);
+	myajax.AddKeyN('type', 'ajax');
+	myajax.AddKeyN('comtype', f.comtype.value);
+	myajax.AddKeyN('isconfirm','yes');
+	
+	myajax.AddKeyN('typeid', f.typeid.value);
+	myajax.AddKeyN('quotemsg', f.quotemsg.value);
+	myajax.AddKeyN('validate', nvalidate);
+	myajax.AddKeyN('notuser', nnotuser);
+	myajax.AddKeyN('username', nusername);
+	myajax.AddKeyN('pwd', npwd);
+	myajax.AddKeyN('msg', msg);
+	myajax.SendPost2('/plus/feedback_ajax.php');
+	//alert(f.quotemsg.value);
+	if($DE('ajaxfeedback_'+fid).innerHTML != null)
+	{
+		$DE('ajaxfeedback_'+fid).innerHTML = '';
+	}
+	scroll(0, taget_obj.offsetTop);
+}
+LoadCommets(1);
+</script>
+<!-- //评论内容区结束 -->
+
+     			</div>  
+            </div> 
+                                   
+        </div>  
+        <!-- end  of  content -->
+
+        <div class="fix_right">   
+             
+			<div class="advertise-box">
+			  <div class="advertise-heading">
+				<h3 class="advertise-title">赞助商</h3>
+			  </div>
+			  <div class="advertise-body">
+				<script src='/plus/ad_js.php?aid=22' language='javascript'></script>
+				<div class="divider"></div>
+				<script src='/plus/ad_js.php?aid=29' language='javascript'></script>					
+			  </div>
+			</div>	
+			
+			<div class="panel panel-default">
+			  <div class="panel-heading">
+				<h3 class="panel-title">推荐文章</h3>
+			  </div>
+			  <div class="panel-body">
+				<ul class="sidearticle_c clearfix">                     
+					<li><a href="/a/chengxusheji/java/2012/1014/433.html" target="_blank">Java中的闭包</a></li>
+<li><a href="/a/chengxusheji/java/2015/0206/2421.html" target="_blank">Java线程面试题 Top 50</a></li>
+
+				</ul>				 
+			  </div>
+			</div>
+			
+			<div class="panel panel-default">
+			  <div class="panel-heading">
+				<h3 class="panel-title">热门文章</h3>
+			  </div>
+			  <div class="panel-body">
+				<ul class="sidearticle_c clearfix">                     
+					<li> <a href="/a/chengxusheji/java/2014/1027/1855.html" target="_blank">java Error opening registry key 'Soft...</a></li>
+<li> <a href="/a/chengxusheji/java/2014/1021/1818.html" target="_blank"> LinkedList用法大全</a></li>
+<li> <a href="/a/chengxusheji/java/2015/0206/2421.html" target="_blank">Java线程面试题 Top 50</a></li>
+<li> <a href="/a/chengxusheji/java/2015/0215/2485.html" target="_blank">一键将网页内容推送到Kindle</a></li>
+<li> <a href="/a/chengxusheji/java/2014/1209/2135.html" target="_blank">Java对象的序列化和反序列化实践</a></li>
+<li> <a href="/a/chengxusheji/java/2015/0215/2486.html" target="_blank">一个Java对象到底占多大内存？</a></li>
+
+				</ul>				 
+			  </div>
+			</div>
+                                                                              
+            <div id="floatbox">   
+				<script src='/plus/ad_js.php?aid=25' language='javascript'></script>	
+         	</div>
+            
+        </div>        
+    
+        <div style="clear:both;"></div>
+	</div> 	
+</div> 
+<script src="/templets/jcodecraeer/js/jcodecraeer.js"></script>
+<!-- 返回顶部 -->
+<div id="gotop" style="display:none"></div>
+<div id="top_comment" style="display:none">
+
+	<div class="tips">
+    	猜你喜欢
+    </div>
+    <ul>                          
+    
+    </ul>
+    <div style="clear:both;"></div>
+</div>
+<script type='text/javascript'>
+	backTop=function (btnId){
+		var btn=document.getElementById(btnId);
+		var topco=document.getElementById('top_comment');
+		var d=document.documentElement;
+		var b=document.body;
+		window.onscroll=set;
+		btn.onclick=function (){
+			btn.style.display="none";
+			window.onscroll=null;
+			this.timer=setInterval(function(){
+				d.scrollTop-=Math.ceil((d.scrollTop+b.scrollTop)*0.1);
+				b.scrollTop-=Math.ceil((d.scrollTop+b.scrollTop)*0.1);
+				if((d.scrollTop+b.scrollTop)==0) clearInterval(btn.timer,window.onscroll=set);
+			},10);
+		};
+		function set(){
+			btn.style.display=(d.scrollTop+b.scrollTop>100)?'block':"none";
+			topco.style.display=(d.scrollTop+b.scrollTop> document.documentElement.clientHeight-100)?'block':"none";
+		}
+	};
+	backTop('gotop');
+	
+	(new SidebarFollow()).init({
+		element: jQuery('#floatbox'),
+		distanceToTop: 0
+	});	
+	
+</script>
+
+
+<!-- 返回顶部END -->
+<style>
+#gotop {
+	background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEMAAAANAgMAAACP9jv8AAAACVBMVEX///////8AAACO9MPsAAAAAXRSTlMAQObYZgAAAGhJREFUeF49zsEJwCAMBdBvoRfvWaJTOEIPZp+O4lEyZcn/RIl+SMJDAG2gTlfc7+k8H8Pm6cRiuFfjip3RphXUV4ghJIaQjVZQoCfkLDI7C7kgiAuRDK+YvJwLQnBPhovRw7ER5of3DyPbFp8RB9axAAAAAElFTkSuQmCC") no-repeat scroll 18px 21px #000000;
+    bottom: 200px;
+    cursor: pointer;
+    display: block;
+    height: 60px;
+    opacity: 0.5;
+    overflow: hidden;
+    transition: opacity 0.3s ease-in 0s, opacity 0.3s ease-out 0s;
+     right: 10px;
+    position: fixed;
+    top: auto;
+    width: 60px;
+    z-index: 999;
+}
+ 
+#top_comment{
+    bottom: 0px;
+    display: block;
+    height: 120px;
+    overflow: hidden;
+    transition: opacity 0.3s ease-in 0s, opacity 0.3s ease-out 0s;
+    right: 0px;
+    position: fixed;
+    top: auto;
+    z-index: 999;
+	background: #FFF;
+	border-top:solid 2px #626262;
+	border-left:solid 1px #EFEFEF;
+	
+	padding-right:10px;
+}
+#top_comment .tips{
+	width:18px;
+	float:left;
+	padding-left:10px;
+	padding-top:8px;
+	font-family:"Courier New", Courier, monospace;
+}
+
+#top_comment li{
+	width:50px;
+	text-align:center;
+	float:left;
+	font-size:12px;
+	padding:8px;
+}
+#top_comment li .imgcontainer{
+	width:50px;
+	height:50px;
+	overflow:hidden;
+}
+#top_comment li a{
+	display:block;
+	
+}
+#top_comment li:hover{
+	background-color: #EAFACF;	
+}
+#top_comment li .title{
+	height:60px;
+	overflow:hidden;	
+}
+</style>
+<div class="footer">
+	<div class="row clearfix">
+		<div class="copyright z">
+			<p>Copyright  2011 - 2014 jcodecraeer.com All Rights Reversed.</p>
+			<p>蜀ICP备12021840号-1</p>
+			<p>本站文章用于学习交流</p>
+		</div>
+		<div class="footer-nav y">	
+			<ul class="clearfix">
+				<li><a href="http://weibo.com/u/2711441293" target="_blank">新浪微博</a></li>
+				<li>qq群一161644793</li>
+				<li>qq群二98711210</li> 
+			</ul>
+			<ul class="clearfix">
+				<li><a href="/sitemap/" target="_blank">网站地图</a></li>	
+				<li>				
+				<script type="text/javascript">
+				var _bdhmProtocol = (("https:" == document.location.protocol) ? " https://" : " http://");
+				document.write(unescape("%3Cscript src='" + _bdhmProtocol + "hm.baidu.com/h.js%3F2f2ac530df20294f718580cea710780e' type='text/javascript'%3E%3C/script%3E"));
+				</script> 
+				</li>	 
+			</ul>			
+		</div>
+	</div>	
+</div>
+</body>
+ 
+</html>
