@@ -5,7 +5,10 @@
         <wb-resource deploy-path="/" source-path="/src/main/webapp" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/java"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src/main/resources"/>
+        <dependent-module archiveName="xutils-4.1.5.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/xutils/xutils">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
         <property name="java-output-path" value="/MyStudy/build/classes"/>
-        <property name="context-root" value="Nvee-Spring-project"/>
+        <property name="context-root" value="myStudy"/>
     </wb-module>
 </project-modules>

@@ -19,6 +19,9 @@ public class Test4 {
 		
 		boolean pass = IdcardUtils.validateCard("43012219900327002x");
 		System.out.println(pass);
+		
+		String s4 = "湘al3e27";
+		System.out.println(s4.toUpperCase());
 	}
 
 }

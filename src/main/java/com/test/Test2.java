@@ -16,6 +16,10 @@ public class Test2 {
 		String UniqueNo = format.format(date)+String.format("%06d", 5); 
 		System.out.println(UniqueNo);
 		System.out.println(s1);
-	
+		String ss1 = "aaa";
+		String ss2 = ss1;
+		ss1 = ss2;
+		System.out.println(ss1);
+		System.out.println(ss2);
 	}
 }

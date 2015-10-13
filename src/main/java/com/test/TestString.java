@@ -13,5 +13,11 @@ public class TestString {
 			
 			System.out.println(arr[i]);
 		}
+		custNo ="易宝支付";
+		char[] ch = custNo.toCharArray();
+		for (char c : ch) {
+			
+			System.out.println(c);
+		}
 	}
 }

@@ -16,12 +16,12 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		
-		
+		<xutils.version>4.1.5</xutils.version>
 		<!-- mybatis jars-->
 		<mybatis.version>3.2.2</mybatis.version>
 		<mybatis-spring.version>1.2.0</mybatis-spring.version>
 		
-		<spring.version>3.2.3.RELEASE</spring.version>
+		<spring.version>4.0.0.RELEASE</spring.version>
 		<aspectjweaver.version>1.7.0</aspectjweaver.version>
 		<aopalliance.version>1.0</aopalliance.version>
 		<cglib-nodep.version>2.2.2</cglib-nodep.version>
@@ -43,8 +43,19 @@
 		<mysql-connector-java.version>5.1.28</mysql-connector-java.version>
 		
 	</properties>
+  <dependencies>
+	<dependency>
+		<groupId>zcu.xutil</groupId>
+		<artifactId>xutils</artifactId>
+		<version>${xutils.version}</version>
+		<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+				</exclusion>
+		</exclusions>
+	</dependency>
 
-	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -56,6 +67,11 @@
 			<artifactId>xstream</artifactId>
 			<version>1.3.1</version>
 		</dependency>
+		<dependency>
+   		 <groupId>com.sun.phobos</groupId>
+   		 	<artifactId>tagsoup</artifactId>
+   		 	<version>1.2</version>
+		  </dependency>
 		<!-- mybatis jar -->
 		<dependency>
 			<groupId>org.mybatis</groupId>
@@ -83,7 +99,6 @@
     		<artifactId>httpmime</artifactId>
    	       <version>4.3.5</version>
 	   </dependency>
-		
 		<dependency>
 		<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
