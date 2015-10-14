@@ -22,11 +22,16 @@ public class ReqMsg {
 			case 8:ret = quyHistoryList(param,paramObj);break;
 			case 16:ret = volidateAcct(param,paramObj);break;
 			case 22:ret = payFine(param,paramObj);break;
-			case 23:ret = payPhone(param,paramObj);break;
+			case 23:ret = payWater(param,paramObj);break;
+			case 24:ret = payElectrict(param,paramObj);break;
+			case 25:ret = payPhone(param,paramObj);break;
+			case 26:ret = queryWater(param,paramObj);break;
+			case 27:ret = queryElectrict(param,paramObj);break;
 			default:ret = "";
 		}
 		return ret;
 	}
+
 
 	//实名认证
 	private static  String regiestDyn(Map<String,Object> param,Map<String,Object> paramObj){
@@ -155,12 +160,12 @@ public class ReqMsg {
     	param.put("orgName", "易宝机构");
     	param.put("userType", "02");
     	param.put("memberCode","0000005");
-    	param.put("userName", "18373171079");
-    	param.put("phone", "18373171079");
-    	param.put("merchantName", "测试商户名称");
+    	param.put("userName", "18373171000");
+    	param.put("phone", "18373171000");
+    	param.put("merchantName", "便民缴费商户");
     	param.put("licenseNumber","431003833");
-    	param.put("corporateName", "nvee");
-    	param.put("corporateIdCard","43012219900327001x");
+    	param.put("corporateName", "lifePayMc");
+    	param.put("corporateIdCard","11000019810419093X");
     	param.put("realName", null);
     	param.put("txnPwd", null);
     	param.put("idCard", null);
@@ -232,6 +237,12 @@ public class ReqMsg {
     	param.put("paramObj", paramObj);
 		return gson.toJson(param);
 	}
+	/**
+	 * 缴话费
+	 * @param param
+	 * @param paramObj
+	 * @return
+	 */
 	private static String payPhone(Map<String, Object> param,Map<String, Object> paramObj) {
 		param.put("route","app0001");
     	param.put("routeType","vgw");
@@ -245,8 +256,102 @@ public class ReqMsg {
     	paramObj.put("province", "410000");
     	paramObj.put("operator", "01");
     	paramObj.put("phone", "18373171080");
+    	paramObj.put("amt", "500");
+    	paramObj.put("cardNo","6226090000000048");
+    	param.put("paramObj", paramObj);
+		return gson.toJson(param);
+	}
+/**
+ * 缴电费
+ * @param param
+ * @param paramObj
+ * @return
+ */
+	private static String payElectrict(Map<String, Object> param,Map<String, Object> paramObj) {
+		param.put("route","app0001");
+    	param.put("routeType","vgw");
+    	param.put("bizCode","00000020");
+    	param.put("custType","14");
+    	param.put("custNo","PC0000000072");
+    	param.put("userId","164");
+    	param.put("cardOrg","CI0000000001");
+    	param.put("pageSize","10");
+    	param.put("page","0");
+    	paramObj.put("cname", "410000");
+    	paramObj.put("bno", "01");
+    	paramObj.put("bamt", "50");
     	paramObj.put("amt", "50");
     	paramObj.put("cardNo","6226388000000095");
+    	param.put("paramObj", paramObj);
+		return gson.toJson(param);
+		
+	}
+	/**
+	 * 缴电费
+	 * @param param
+	 * @param paramObj
+	 * @return
+	 */
+	private static String payWater(Map<String, Object> param,Map<String, Object> paramObj) {
+		param.put("route","app0001");
+    	param.put("routeType","vgw");
+    	param.put("bizCode","00000018");
+    	param.put("custType","14");
+    	param.put("custNo","PC0000000072");
+    	param.put("userId","164");
+    	param.put("cardOrg","CI0000000001");
+    	param.put("pageSize","10");
+    	param.put("page","0");
+    	paramObj.put("cname", "410000");
+    	paramObj.put("bno", "01");
+    	paramObj.put("bamt", "50");
+    	paramObj.put("amt", "50");
+    	paramObj.put("cardNo","6226388000000095");
+    	param.put("paramObj", paramObj);
+		return gson.toJson(param);
+	}
+	/**
+	 * 电费账单查询
+	 * @param param
+	 * @param paramObj
+	 * @return
+	 */
+	private static String queryElectrict(Map<String, Object> param,
+			Map<String, Object> paramObj) {
+		param.put("route","app0001");
+    	param.put("routeType","vgw");
+    	param.put("bizCode","00000020");
+    	param.put("custType","14");
+    	param.put("custNo","PC0000000072");
+    	param.put("userId","164");
+    	param.put("cardOrg","CI0000000001");
+    	param.put("pageSize","10");
+    	param.put("page","0");
+    	paramObj.put("cno", "410000");
+    	paramObj.put("city", "01");
+    	param.put("paramObj", paramObj);
+		return gson.toJson(param);
+	}
+/**
+ * 
+ * @param param
+ * @param paramObj
+ * @return
+ */
+	private static String queryWater(Map<String, Object> param,
+			Map<String, Object> paramObj) {
+		param.put("route","app0001");
+    	param.put("routeType","vgw");
+    	param.put("bizCode","00000017");
+    	param.put("custType","14");
+    	param.put("custNo","PC0000000072");
+    	param.put("userId","164");
+    	param.put("cardOrg","CI0000000001");
+    	param.put("pageSize","10");
+    	param.put("page","0");
+    	paramObj.put("cno", "410000");
+    	paramObj.put("city", "01");
+
     	param.put("paramObj", paramObj);
 		return gson.toJson(param);
 	}

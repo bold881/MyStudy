@@ -23,7 +23,11 @@ public enum ParamEnum {
 	QUY_CARD(20),
 	QUY_CBIN(21),
 	PAY_FINE(22),
-	PAY_PHONE(23);
+	PAY_WATER(23),
+	PAY_ELECTRICT(24),
+	PAY_PHONE(25),
+	QUY_WATER(26),
+	QUY_ELECTRICT(27);
 	
 	private int type;
 	ParamEnum(int type) {

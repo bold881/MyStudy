@@ -16,7 +16,7 @@ public enum UrlEnum {
 	public static String initUrl(int i){
 		String url = null;
 		switch(i){
-			case 1 :url = "http://127.0.0.1:8383/ca-web-srv/apps/appSrvRequest.action";break;
+			case 1 :url = "http://172.19.26.112:8038/ca-web-srv/apps/appSrvRequest.action";break;
 			case 2 :url = "http://172.19.29.65:8430/ca-web-srv/ptxn/doTxn.action";break;
 			case 3 :url = "http://172.19.29.65:8430/ca-web-srv/userRegister/register.action";break;
 			case 4 :url = "http://172.19.29.65:8430/ca-web-srv/dynamic/send.action";break;
